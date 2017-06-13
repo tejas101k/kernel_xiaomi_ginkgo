@@ -361,6 +361,12 @@ config CPUFREQ_DT_PLATDEV
 
 	  If in doubt, say N.
 
+config FINGERPRINT_BOOST
+	bool "Fingerprint Boost"
+	default y
+	help
+	  Boosts available CPUs to max frequency on fingerprint sensor input.
+
 config CPUFREQ_DUMMY
 	tristate "Dummy CPU frequency driver"
 	help
