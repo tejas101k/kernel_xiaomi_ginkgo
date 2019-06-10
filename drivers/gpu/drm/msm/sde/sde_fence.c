@@ -231,7 +231,7 @@ static int _sde_fence_create_fd(void *fence_ctx, uint32_t val)
 
 	/* create fd */
 	fd = get_unused_fd_flags(0);
-	if (unlikely(fd < 0)) {
+	if (fd < 0) {
 #ifdef CONFIG_FENCE_DEBUG
 		SDE_ERROR("failed to get_unused_fd_flags(), %s\n",
 							sde_fence->name);
