@@ -2471,6 +2471,9 @@ err_unmap_sg:
 	dma_buf_unmap_attachment(attach, table, dma_dir);
 err_detach:
 	dma_buf_detach(dmabuf, attach);
+err_put:
+	if (rc)
+		dma_buf_put(dmabuf);
 err_out:
 	return rc;
 }
