@@ -46,9 +46,7 @@
 static unsigned long default_bus_bw_set[] = {0, 19200000, 50000000,
 				100000000, 150000000, 200000000, 236000000};
 /* SCM Call Id */
-#define TZ_SCM_CALL_FROM_HLOS	0x7E7E7E7E
-#define TZ_PIL_AUTH_GSI_QUP_PROC	0x13
-#define SSR_SCM_CMD	0x2
+#define SSR_SCM_CMD	0x1
 
 enum ssc_core_clocks {
 	SSC_CORE_CLK,
@@ -401,9 +399,9 @@ static void geni_se_ssc_qup_up(struct geni_se_device *dev)
 	struct scm_desc desc;
 	struct se_geni_rsc *rsc = NULL;
 
-	desc.args[0] = TZ_PIL_AUTH_GSI_QUP_PROC;
-	desc.args[1] = TZ_SCM_CALL_FROM_HLOS;
-	desc.arginfo = SCM_ARGS(2, SCM_VAL);
+	/* Passing dummy argument as it is scm call requirement */
+	desc.args[0] = 0x0;
+	desc.arginfo = SCM_ARGS(1, SCM_VAL);
 
 	if (list_empty(&dev->ssr.active_list_head)) {
 		GENI_SE_ERR(dev->log_ctx, false, NULL,
@@ -423,7 +421,7 @@ static void geni_se_ssc_qup_up(struct geni_se_device *dev)
 						rsc_ssr.active_list)
 		se_geni_clks_on(rsc);
 
-	ret = scm_call2(SCM_SIP_FNID(SCM_SVC_MP, SSR_SCM_CMD), &desc);
+	ret = scm_call2(SCM_SIP_FNID(TZ_SVC_QUP_FW_LOAD, SSR_SCM_CMD), &desc);
 	if (ret) {
 		GENI_SE_ERR(dev->log_ctx, false, NULL,
 			"%s: Unable to load firmware after SSR ret:%d\n",
