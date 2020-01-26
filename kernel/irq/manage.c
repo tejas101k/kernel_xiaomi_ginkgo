@@ -32,7 +32,6 @@ struct irq_desc_list {
 };
 
 static DEFINE_RAW_SPINLOCK(perf_irqs_lock);
-static int perf_cpu_index = -1;
 
 #ifdef CONFIG_IRQ_FORCED_THREADING
 __read_mostly bool force_irqthreads;
@@ -1197,39 +1196,12 @@ static void unaffine_one_perf_thread(struct task_struct *t)
 	set_cpus_allowed_ptr(t, cpu_all_mask);
 }
 
-static void affine_one_perf_irq(struct irq_desc *desc)
-{
-	int cpu;
-
-	/*
-	* If for some reason all perf cores are offline,
-	* then affine the IRQ to the cores that are left online.
-	*/
-	if (!cpumask_intersects(cpu_perf_mask, cpu_online_mask)) {
-		irq_set_affinity_locked(&desc->irq_data, cpu_online_mask, true);
-		perf_cpu_index = -1;
-		return;
-	}
-
-	/* Balance the performance-critical IRQs across all perf CPUs */
-	while (1) {
-		cpu = cpumask_next_and(perf_cpu_index, cpu_perf_mask,
-				       cpu_online_mask);
-		if (cpu < nr_cpu_ids)
-			break;
-		perf_cpu_index = -1;
-	}
-	irq_set_affinity_locked(&desc->irq_data, cpumask_of(cpu), true);
-
-	perf_cpu_index = cpu;
-}
-
 static void setup_perf_irq_locked(struct irq_desc *desc)
 {
 	add_desc_to_perf_list(desc);
 	irqd_set(&desc->irq_data, IRQD_AFFINITY_MANAGED);
 	raw_spin_lock(&perf_irqs_lock);
-	affine_one_perf_irq(desc);
+	irq_set_affinity_locked(&desc->irq_data, cpu_perf_mask, true);
 	raw_spin_unlock(&perf_irqs_lock);
 }
 
@@ -1267,7 +1239,6 @@ void unaffine_perf_irqs(void)
 			unaffine_one_perf_thread(desc->action->thread);
 		raw_spin_unlock(&desc->lock);
 	}
-	perf_cpu_index = -1;
 	raw_spin_unlock_irqrestore(&perf_irqs_lock, flags);
 }
 
@@ -1281,7 +1252,7 @@ void reaffine_perf_irqs(void)
 		struct irq_desc *desc = data->desc;
 
 		raw_spin_lock(&desc->lock);
-		affine_one_perf_irq(desc);
+		irq_set_affinity_locked(&desc->irq_data, cpu_perf_mask, true);
 		if (desc->action->thread)
 			affine_one_perf_thread(desc->action->thread);
 		raw_spin_unlock(&desc->lock);
