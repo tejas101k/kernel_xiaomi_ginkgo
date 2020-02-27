@@ -79,7 +79,7 @@
 	qcom,bl-pmic-pwm-period-usecs = <100>;
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-max-level = <2047>;
-	qcom,mdss-brightness-max-level = <2047>;
+	qcom,mdss-brightness-max-level = <255>;
 	qcom,mdss-dsi-bl-default-level = <536>;
 	qcom,platform-reset-gpio = <&tlmm 90 0>;
 	qcom,platform-bklight-en-gpio = <&pmi632_gpios 6 0>;
@@ -113,7 +113,7 @@
 	qcom,bl-pmic-pwm-period-usecs = <100>;
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-max-level = <2047>;
-	qcom,mdss-brightness-max-level = <2047>;
+	qcom,mdss-brightness-max-level = <255>;
 	qcom,mdss-dsi-bl-default-level = <536>;
 	qcom,platform-reset-gpio = <&tlmm 90 0>;
 	qcom,platform-bklight-en-gpio = <&pmi632_gpios 6 0>;
@@ -147,7 +147,7 @@
 	qcom,bl-pmic-pwm-period-usecs = <100>;
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-max-level = <2047>;
-	qcom,mdss-brightness-max-level = <2047>;
+	qcom,mdss-brightness-max-level = <255>;
 	qcom,mdss-dsi-bl-default-level = <536>;
 	qcom,platform-reset-gpio = <&tlmm 90 0>;
 	qcom,platform-bklight-en-gpio = <&pmi632_gpios 6 0>;
