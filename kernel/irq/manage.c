@@ -1202,7 +1202,6 @@ static void unaffine_one_perf_thread(struct task_struct *t)
 static void setup_perf_irq_locked(struct irq_desc *desc)
 {
 	add_desc_to_perf_list(desc);
-	irqd_set(&desc->irq_data, IRQD_AFFINITY_MANAGED);
 	raw_spin_lock(&perf_irqs_lock);
 	irq_set_affinity_locked(&desc->irq_data, cpu_perf_mask, true);
 	raw_spin_unlock(&perf_irqs_lock);
