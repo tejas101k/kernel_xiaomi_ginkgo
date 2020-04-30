@@ -304,7 +304,6 @@ __CMPXCHG_CASE(w, b,  mb_,  8, dmb ish,  , l, "memory", )
 __CMPXCHG_CASE(w, h,  mb_, 16, dmb ish,  , l, "memory", )
 __CMPXCHG_CASE(w,  ,  mb_, 32, dmb ish,  , l, "memory", )
 __CMPXCHG_CASE( ,  ,  mb_, 64, dmb ish,  , l, "memory", L)
->>>>>>> 496d5ba9c56b61f5cd77faac0b21484721f632d0
 
 #undef __CMPXCHG_CASE
 
