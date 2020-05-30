@@ -2148,4 +2148,3 @@ int msm_pinctrl_remove(struct platform_device *pdev)
 	return 0;
 }
 EXPORT_SYMBOL(msm_pinctrl_remove);
-
