@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -3662,8 +3663,8 @@ __wlan_hdd_cfg80211_get_supported_features(struct wiphy *wiphy,
 		fset |= WIFI_FEATURE_EXTSCAN | WIFI_FEATURE_HAL_EPNO;
 	}
 	if (wlan_hdd_nan_is_supported(hdd_ctx)) {
-		hdd_debug("NAN is supported by firmware");
-		fset |= WIFI_FEATURE_NAN;
+		//hdd_debug("NAN is supported by firmware");
+		//fset |= WIFI_FEATURE_NAN;
 	}
 
 	ucfg_mlme_get_fine_time_meas_cap(hdd_ctx->psoc, &fine_time_meas_cap);
