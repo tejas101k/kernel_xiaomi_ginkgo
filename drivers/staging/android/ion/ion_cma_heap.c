@@ -124,8 +124,7 @@ static int ion_cma_allocate(struct ion_heap *heap, struct ion_buffer *buffer,
 			}
 		}
 
-		if (MAKE_ION_ALLOC_DMA_READY ||
-		    (!hlos_accessible_buffer(buffer)) ||
+		if ((!hlos_accessible_buffer(buffer)) ||
 		    !ion_buffer_cached(buffer))
 			ion_pages_sync_for_device(dev, pages, size,
 						  DMA_BIDIRECTIONAL);
@@ -150,7 +149,7 @@ free_table:
 	kfree(table);
 err_alloc:
 	if (info->cpu_addr)
-		dma_free_attrs(dev, size, info->cpu_addr, info->handle, 0);
+		dma_free_writecombine(dev, size, info->cpu_addr, info->handle);
 	else
 		cma_release(cma_heap->cma, pages, nr_pages);
 
@@ -276,29 +275,12 @@ static int ion_secure_cma_map_user(struct ion_heap *mapper,
 	return ion_heap_map_user(mapper, buffer, vma);
 }
 
-static int ion_secure_cma_pm_freeze(struct ion_heap *heap)
-{
-	long sz;
-
-	sz = atomic_long_read(&heap->total_allocated);
-	if (sz) {
-		pr_err("%s: %lx bytes won't be saved across hibernation. Aborting.",
-		       __func__, sz);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static struct ion_heap_ops ion_secure_cma_ops = {
 	.allocate = ion_secure_cma_allocate,
 	.free = ion_secure_cma_free,
 	.map_user = ion_secure_cma_map_user,
 	.map_kernel = ion_secure_cma_map_kernel,
 	.unmap_kernel = ion_heap_unmap_kernel,
-	.pm = {
-		.freeze = ion_secure_cma_pm_freeze,
-	}
 };
 
 struct ion_heap *ion_cma_secure_heap_create(struct ion_platform_heap *data)
