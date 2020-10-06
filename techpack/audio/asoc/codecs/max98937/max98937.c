@@ -25,6 +25,10 @@
 #include <dsp/q6afe-v2.h>
 #include "max98937.h"
 
+// Force disable the spammy logging
+#undef pr_info
+#define pr_info pr_debug
+
 /* #define snd_soc_kcontrol_codec snd_kcontrol_chip */
 /* #define snd_soc_dapm_to_codec(w->dapm)  w->codec */
 /* #define snd_soc_codec_get_dapm(codec) &codec->dapm */
