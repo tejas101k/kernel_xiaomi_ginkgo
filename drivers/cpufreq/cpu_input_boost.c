@@ -5,6 +5,7 @@
 
 #define pr_fmt(fmt) "cpu_input_boost: " fmt
 
+#include <linux/battery_saver.h>
 #include <linux/cpu.h>
 #include <linux/cpufreq.h>
 #include <linux/input.h>
@@ -145,7 +146,7 @@ static void update_online_cpu_policy(void)
 
 static void __cpu_input_boost_kick(struct boost_drv *b)
 {
-	if (test_bit(SCREEN_OFF, &b->state))
+	if (test_bit(SCREEN_OFF, &b->state) || is_battery_saver_on())
 		return;
 
 	if (!input_boost_duration)
