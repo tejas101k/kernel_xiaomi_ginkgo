@@ -9276,6 +9276,9 @@ static int qseecom_probe(struct platform_device *pdev)
 		qseecom.timer_running = false;
 		qseecom.qsee_perf_client = msm_bus_scale_register_client(
 		      qseecom_platform_support);
+
+		if (!qseecom.qsee_perf_client)
+			pr_err("Unable to register bus client\n");
 	}
 
 	qseecom.whitelist_support = qseecom_check_whitelist_feature();
@@ -9305,9 +9308,6 @@ static int qseecom_probe(struct platform_device *pdev)
 	}
 	atomic_set(&qseecom.unload_app_kthread_state,
 						UNLOAD_APP_KT_SLEEP);
-
-	if (!qseecom.qsee_perf_client)
-		pr_err("Unable to register bus client\n");
 
 	atomic_set(&qseecom.qseecom_state, QSEECOM_STATE_READY);
 	return 0;
