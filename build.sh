@@ -10,6 +10,14 @@ exit 1
 fi
 fi
 
+cat <<'EOF' >> arch/arm64/configs/vendor/ginkgo-perf_defconfig
+CONFIG_LTO_CLANG=y
+CONFIG_THINLTO=y
+CONFIG_LD_DEAD_CODE_DATA_ELIMINATION=y
+EOF
+
+trap "git checkout arch/arm64/configs/vendor/ginkgo-perf_defconfig" INT
+
 mkdir -p out
 make O=out ARCH=arm64 vendor/ginkgo-perf_defconfig
 
@@ -24,6 +32,7 @@ fi
 
 if [ -f "out/arch/arm64/boot/Image.gz-dtb" ] && [ -f "out/arch/arm64/boot/dtbo.img" ]; then
 echo -e "\nKernel compiled succesfully! Zipping up...\n"
+git checkout arch/arm64/configs/vendor/ginkgo-perf_defconfig
 git clone -q https://github.com/ghostrider-reborn/AnyKernel3
 cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3
 cp out/arch/arm64/boot/dtbo.img AnyKernel3
@@ -41,4 +50,5 @@ fi
 rm -rf out/arch/arm64/boot
 else
 echo -e "\nCompilation failed!"
+git checkout arch/arm64/configs/vendor/ginkgo-perf_defconfig
 fi
