@@ -7565,12 +7565,9 @@ static struct snd_soc_dai_link msm_mi2s_be_dai_links[] = {
 #if defined(CONFIG_SND_SOC_MAX98937)
 		.codec_name = "max98927",
 		.codec_dai_name = "max98927-aif1",
-//#elif defined(CONFIG_SND_SOC_TAS2562)	
-//		.codec_name     = "tas2562.0-004c",
-//		.codec_dai_name = "tas2562 ASI1",
 #else
 		.codec_name = "msm-stub-codec.1",
-              .codec_dai_name = "msm-stub-rx",
+		.codec_dai_name = "msm-stub-rx",
 #endif
 		.no_pcm = 1,
 		.dpcm_playback = 1,
@@ -7588,9 +7585,6 @@ static struct snd_soc_dai_link msm_mi2s_be_dai_links[] = {
 #if defined(CONFIG_SND_SOC_MAX98937)
 		.codec_name = "max98927",
 		.codec_dai_name = "max98927-aif1",
-//#elif defined(CONFIG_SND_SOC_TAS2562)	
-//		.codec_name     = "tas2562.0-004c",
-//		.codec_dai_name = "tas2562 ASI1",
 #else
 		.codec_name = "msm-stub-codec.1",
 		.codec_dai_name = "msm-stub-tx",
