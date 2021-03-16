@@ -1,7 +1,7 @@
 /*
  * max98927.c -- ALSA SoC Stereo MAX98927 driver
  * Copyright 2013-18 Maxim Integrated Products
- * Copyright (C) 2019 XiaoMi, Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
@@ -1510,6 +1510,23 @@ static int max98927_dai_set_sysclk(struct snd_soc_dai *dai,
 	return 0;
 }
 
+static int max98927_regmap_write(struct regmap *map, unsigned int reg, unsigned int val)
+{
+    int i;
+    int rc;
+
+    for (i = 0; i < 5; i++) {
+        rc = regmap_write(map, reg, val);
+        if (!rc) {
+            break;
+        }
+        pr_err("%s: reg:0x%x, val: 0x%x, retry(%d), rc = %d\n", __func__, reg, val, i+1, rc);
+        msleep(5);
+    }
+
+    return rc;
+}
+
 static int max98927_stream_mute(struct snd_soc_dai *codec_dai, int mute, int stream)
 {
 	struct snd_soc_codec *codec = codec_dai->codec;
@@ -1567,6 +1584,9 @@ static int max98927_stream_mute(struct snd_soc_dai *codec_dai, int mute, int str
 						}
 						regmap_update_bits(max98927->regmap[i], amp_enable, 1, 1);
 						regmap_update_bits(max98927->regmap[i], global_enable, 1, 1);
+						max98927_regmap_write(max98927->regmap[i], 0x0600,0x54);
+						max98927_regmap_write(max98927->regmap[i], 0x0600,0x4D);
+						max98927_regmap_write(max98927->regmap[i], 0x030d,0x40);
 					}
 				}
 			}
