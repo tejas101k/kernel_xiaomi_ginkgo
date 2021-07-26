@@ -224,16 +224,7 @@ size_t ion_heap_freelist_shrink(struct ion_heap *heap, size_t size)
 
 static int ion_heap_deferred_free(void *data)
 {
-#ifndef CONFIG_ION_DEFER_FREE_NO_SCHED_IDLE
-	static const struct sched_param param = {
-		.sched_priority = 0
-	};
-#endif
 	struct ion_heap *heap = data;
-
-#ifndef CONFIG_ION_DEFER_FREE_NO_SCHED_IDLE
-	sched_setscheduler(current, SCHED_IDLE, &param);
-#endif
 
 	while (true) {
 		struct ion_buffer *buffer;
@@ -259,16 +250,21 @@ static int ion_heap_deferred_free(void *data)
 
 int ion_heap_init_deferred_free(struct ion_heap *heap)
 {
-	struct task_struct *thread;
-
+#ifndef CONFIG_ION_DEFER_FREE_NO_SCHED_IDLE
+	struct sched_param param = { .sched_priority = 0 };
+#endif
 	INIT_LIST_HEAD(&heap->free_list);
 	init_waitqueue_head(&heap->waitqueue);
-	thread = kthread_run(ion_heap_deferred_free, heap, "%s", heap->name);
-	if (IS_ERR(thread)) {
+	heap->task = kthread_run(ion_heap_deferred_free, heap,
+				 "%s", heap->name);
+	if (IS_ERR(heap->task)) {
 		pr_err("%s: creating thread for deferred free failed\n",
 		       __func__);
-		return PTR_ERR_OR_ZERO(thread);
+		return PTR_ERR_OR_ZERO(heap->task);
 	}
+#ifndef CONFIG_ION_DEFER_FREE_NO_SCHED_IDLE
+	sched_setscheduler(heap->task, SCHED_IDLE, &param);
+#endif
 	return 0;
 }
 
