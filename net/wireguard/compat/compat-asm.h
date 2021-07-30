@@ -52,8 +52,12 @@
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 76) && !defined(ISCENTOS8S)
+#ifndef SYM_FUNC_START
 #define SYM_FUNC_START ENTRY
+#endif
+#ifndef SYM_FUNC_END
 #define SYM_FUNC_END ENDPROC
+#endif
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)
