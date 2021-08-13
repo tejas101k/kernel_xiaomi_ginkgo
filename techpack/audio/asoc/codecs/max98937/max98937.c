@@ -1520,7 +1520,7 @@ static int max98927_regmap_write(struct regmap *map, unsigned int reg, unsigned 
         if (!rc) {
             break;
         }
-        pr_err("%s: reg:0x%x, val: 0x%x, retry(%d), rc = %d\n", __func__, reg, val, i+1, rc);
+        pr_debug("%s: reg:0x%x, val: 0x%x, retry(%d), rc = %d\n", __func__, reg, val, i+1, rc);
         msleep(5);
     }
 
