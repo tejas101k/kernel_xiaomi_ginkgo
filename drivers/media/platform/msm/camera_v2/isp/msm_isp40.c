@@ -172,32 +172,23 @@ static int32_t msm_vfe40_init_qos_parms(struct vfe_device *vfe_dev,
 		}
 		rc = of_property_read_u32_array(of_node, qos_parms->regs,
 			qos_regs, qos_entries);
-		if (rc < 0) {
+		if (rc < 0)
 			pr_err("%s: NO QOS BUS BDG info\n", __func__);
-			kfree(qos_settings);
-			kfree(qos_regs);
-		} else {
+		else {
 			if (qos_parms->settings) {
 				rc = of_property_read_u32_array(of_node,
 					qos_parms->settings,
 					qos_settings, qos_entries);
-				if (rc < 0) {
-					pr_err("%s: NO QOS settings\n",
-						__func__);
-					kfree(qos_settings);
-					kfree(qos_regs);
-				} else {
+				if (rc < 0)
+					pr_err("%s: NO QOS settings\n", __func__);
+				else
 					for (i = 0; i < qos_entries; i++)
 						msm_camera_io_w(qos_settings[i],
 							vfebase + qos_regs[i]);
-					kfree(qos_settings);
-					kfree(qos_regs);
-				}
-			} else {
-				kfree(qos_settings);
-				kfree(qos_regs);
 			}
 		}
+		kfree(qos_settings);
+		kfree(qos_regs);
 	}
 	rc = of_property_read_u32(of_node, ds_parms->entries,
 		&ds_entries);
@@ -216,32 +207,23 @@ static int32_t msm_vfe40_init_qos_parms(struct vfe_device *vfe_dev,
 		}
 		rc = of_property_read_u32_array(of_node, ds_parms->regs,
 			ds_regs, ds_entries);
-		if (rc < 0) {
+		if (rc < 0)
 			pr_err("%s: NO D/S register info\n", __func__);
-			kfree(ds_settings);
-			kfree(ds_regs);
-		} else {
+		else {
 			if (ds_parms->settings) {
 				rc = of_property_read_u32_array(of_node,
 					ds_parms->settings, ds_settings,
 					ds_entries);
-				if (rc < 0) {
-					pr_err("%s: NO D/S settings\n",
-						__func__);
-					kfree(ds_settings);
-					kfree(ds_regs);
-				} else {
+				if (rc < 0)
+					pr_err("%s: NO D/S settings\n", __func__);
+				else
 					for (i = 0; i < ds_entries; i++)
 						msm_camera_io_w(ds_settings[i],
 							vfebase + ds_regs[i]);
-						kfree(ds_regs);
-						kfree(ds_settings);
-				}
-			} else {
-				kfree(ds_regs);
-				kfree(ds_settings);
 			}
 		}
+		kfree(ds_regs);
+		kfree(ds_settings);
 	}
 	return 0;
 }
@@ -273,28 +255,22 @@ static int32_t msm_vfe40_init_vbif_parms(struct vfe_device *vfe_dev,
 		}
 		rc = of_property_read_u32_array(of_node, vbif_parms->regs,
 			vbif_regs, vbif_entries);
-		if (rc < 0) {
+		if (rc < 0)
 			pr_err("%s: NO VBIF info\n", __func__);
-			kfree(vbif_settings);
-			kfree(vbif_regs);
-		} else {
+		else {
 			rc = of_property_read_u32_array(of_node,
 				vbif_parms->settings,
 				vbif_settings, vbif_entries);
-			if (rc < 0) {
-				pr_err("%s: NO VBIF settings\n",
-					__func__);
-				kfree(vbif_settings);
-				kfree(vbif_regs);
-			} else {
+			if (rc < 0)
+				pr_err("%s: NO VBIF settings\n", __func__);
+			else
 				for (i = 0; i < vbif_entries; i++)
 					msm_camera_io_w(
 						vbif_settings[i],
 						vfe_vbif_base + vbif_regs[i]);
-				kfree(vbif_settings);
-				kfree(vbif_regs);
-			}
 		}
+		kfree(vbif_settings);
+		kfree(vbif_regs);
 	}
 	return 0;
 }
