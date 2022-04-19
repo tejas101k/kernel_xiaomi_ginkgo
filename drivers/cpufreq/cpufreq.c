@@ -727,8 +727,12 @@ static ssize_t store_##file_name					\
 	int ret, temp;							\
 	struct cpufreq_policy new_policy;				\
 									\
-	if (&policy->object == &policy->min &&				\
-			is_battery_saver_on())				\
+	if (IS_ENABLED(CONFIG_CPU_INPUT_BOOST) && 			\
+	    &policy->object == &policy->min)				\
+		return count;						\
+									\
+	if (IS_ENABLED(CONFIG_CPU_INPUT_BOOST) && 			\
+	    &policy->object == &policy->max)				\
 		return count;						\
 									\
 	memcpy(&new_policy, policy, sizeof(*policy));			\
