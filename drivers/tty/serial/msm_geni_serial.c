@@ -536,6 +536,7 @@ static void wait_for_transfers_inflight(struct uart_port *uport)
 		}
 	}
 	if (check_transfers_inflight(uport)) {
+		#if defined(CONFIG_DEBUG_FS) && defined(CONFIG_IPC_LOGGING)
 		u32 geni_status = geni_read_reg_nolog(uport->membase,
 								SE_GENI_STATUS);
 		u32 geni_ios = geni_read_reg_nolog(uport->membase, SE_GENI_IOS);
@@ -543,6 +544,7 @@ static void wait_for_transfers_inflight(struct uart_port *uport)
 							SE_GENI_RX_FIFO_STATUS);
 		u32 rx_dma =
 			geni_read_reg_nolog(uport->membase, SE_DMA_RX_LEN_IN);
+		#endif
 
 		IPC_LOG_MSG(port->ipc_log_misc,
 			"%s IOS 0x%x geni status 0x%x rx: fifo 0x%x dma 0x%x\n",
@@ -629,7 +631,9 @@ static int msm_geni_serial_ioctl(struct uart_port *uport, unsigned int cmd,
 
 static void msm_geni_serial_break_ctl(struct uart_port *uport, int ctl)
 {
+	#if defined(CONFIG_DEBUG_FS) && defined(CONFIG_IPC_LOGGING)
 	struct msm_geni_serial_port *port = GET_DEV_PORT(uport);
+	#endif
 
 	if (!uart_console(uport) && device_pending_suspend(uport)) {
 		IPC_LOG_MSG(port->ipc_log_misc,
@@ -794,7 +798,9 @@ static int msm_geni_serial_power_on(struct uart_port *uport)
 
 static void msm_geni_serial_power_off(struct uart_port *uport)
 {
+	#if defined(CONFIG_DEBUG_FS) && defined(CONFIG_IPC_LOGGING)
 	struct msm_geni_serial_port *port = GET_DEV_PORT(uport);
+	#endif
 	int usage_count = atomic_read(&uport->dev->power.usage_count);
 
 	if (!usage_count) {
@@ -1412,7 +1418,9 @@ static void stop_tx_sequencer(struct uart_port *uport)
 
 static void msm_geni_serial_stop_tx(struct uart_port *uport)
 {
+	#if defined(CONFIG_DEBUG_FS) && defined(CONFIG_IPC_LOGGING)
 	struct msm_geni_serial_port *port = GET_DEV_PORT(uport);
+	#endif
 
 	if (!uart_console(uport) && device_pending_suspend(uport)) {
 		dev_err(uport->dev, "%s.Device is suspended.\n", __func__);
@@ -1624,7 +1632,9 @@ exit_rx_seq:
 
 static void msm_geni_serial_stop_rx(struct uart_port *uport)
 {
+	#if defined(CONFIG_DEBUG_FS) && defined(CONFIG_IPC_LOGGING)
 	struct msm_geni_serial_port *port = GET_DEV_PORT(uport);
+	#endif
 
 	if (!uart_console(uport) && device_pending_suspend(uport)) {
 		IPC_LOG_MSG(port->ipc_log_misc,
