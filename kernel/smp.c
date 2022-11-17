@@ -145,8 +145,8 @@ extern void send_call_function_single_ipi(int cpu);
  * for execution on the given CPU. data must already have
  * ->func, ->info, and ->flags set.
  */
-int generic_exec_single(int cpu, struct __call_single_data *csd, smp_call_func_t func,
-			void *info)
+int generic_exec_single(int cpu, struct __call_single_data *csd,
+			       smp_call_func_t func, void *info)
 {
 	if (cpu == smp_processor_id()) {
 		unsigned long flags;
