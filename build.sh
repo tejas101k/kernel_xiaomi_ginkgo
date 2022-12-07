@@ -16,6 +16,11 @@ export PATH="$TC_DIR/bin:$PATH"
 export KBUILD_BUILD_USER=adithya
 export KBUILD_BUILD_HOST=ghostrider_reborn
 
+if test -z "$(git rev-parse --show-cdup 2>/dev/null)" &&
+   head=$(git rev-parse --verify HEAD 2>/dev/null); then
+	ZIPNAME="${ZIPNAME::-4}-$(echo $head | cut -c1-8).zip"
+fi
+
 if [[ $1 = "-r" || $1 = "--regen" ]]; then
 make O=out ARCH=arm64 $DEFCONFIG savedefconfig
 cp out/defconfig arch/arm64/configs/$DEFCONFIG
