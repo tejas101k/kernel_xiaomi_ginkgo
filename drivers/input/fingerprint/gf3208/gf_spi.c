@@ -332,7 +332,6 @@ static irqreturn_t gf_irq(int irq, void *handle)
 	__pm_wakeup_event(&fp_ws, WAKELOCK_HOLD_TIME);
 	sendnlmsg(&msg);
 	if (gf_dev->device_available == 1) {
-		printk("%s:shedule_work\n",__func__);
 		gf_dev->wait_finger_down = false;
 		schedule_work(&gf_dev->work);
 	}
@@ -356,7 +355,7 @@ static int irq_setup(struct gf_dev *gf_dev)
 			"gf", gf_dev);
 
 	if (status) {
-		pr_err("failed to request IRQ:%d\n", gf_dev->irq);
+		pr_debug("failed to request IRQ:%d\n", gf_dev->irq);
 		return status;
 	}
 	enable_irq_wake(gf_dev->irq);
@@ -387,7 +386,7 @@ static void gf_kernel_key_input(struct gf_dev *gf_dev, struct gf_key *gf_key)
 		/* add special key define */
 		key_input = gf_key->key;
 	}
-	pr_info("%s: received key event[%d], key=%d, value=%d\n",
+	pr_debug("%s: received key event[%d], key=%d, value=%d\n",
 			__func__, key_input, gf_key->key, gf_key->value);
 
 	if ((GF_KEY_POWER == gf_key->key || GF_KEY_CAMERA == gf_key->key)
