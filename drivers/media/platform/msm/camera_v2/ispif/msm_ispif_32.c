@@ -1072,7 +1072,7 @@ static void ispif_process_irq(struct ispif_device *ispif,
 	if (out[vfe_id].ispifIrqStatus0 &
 			ISPIF_IRQ_STATUS_PIX_SOF_MASK) {
 		if (ispif->ispif_sof_debug < 5)
-			pr_err("%s: PIX0 frame id: %u\n", __func__,
+			pr_debug("%s: PIX0 frame id: %u\n", __func__,
 				ispif->sof_count[vfe_id].sof_cnt[PIX0]);
 		ispif->sof_count[vfe_id].sof_cnt[PIX0]++;
 		ispif->ispif_sof_debug++;
