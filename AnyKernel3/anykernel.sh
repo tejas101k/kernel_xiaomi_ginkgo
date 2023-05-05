@@ -4,7 +4,7 @@
 ### AnyKernel setup
 # begin properties
 properties() { '
-kernel.string=Cuh KerneL (Non KernelSU) For Redmi Note 8/8T
+kernel.string=Cuh KerneL (KernelSU) For Redmi Note 8/8T
 do.devicecheck=1
 do.modules=0
 do.systemless=1

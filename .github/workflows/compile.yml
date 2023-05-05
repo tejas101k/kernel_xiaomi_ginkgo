@@ -15,7 +15,7 @@ jobs:
 
        - name: Building Kernel.
          run: |
-             git clone --depth 1 https://${{ secrets.USERNAME }}:${{ secrets.TOKEN }}@github.com/${{ secrets.USERNAME }}/Cuh-KerneL.git -b thirteen kernel
+             git clone --depth 1 https://${{ secrets.USERNAME }}:${{ secrets.TOKEN }}@github.com/${{ secrets.USERNAME }}/Cuh-KerneL.git -b thirteenKSU kernel
              cd kernel
              chmod 777 build.sh
              ./build.sh
