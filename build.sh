@@ -1,34 +1,56 @@
 #!/bin/bash
 #
 # Compile script for QuicksilveR kernel
-# Copyright (C) 2020-2021 Adithya R.
+# Copyright (C) 2020-2023 Adithya R.
+# Copyright (C) 2023 Tejas Singh.
 
 SECONDS=0 # builtin bash timer
-ZIPNAME="QuicksilveRV2-ginkgo-$(date '+%Y%m%d-%H%M').zip"
+ZIPNAME="Cuh-ginkgo-v1-$(TZ=Asia/Kolkata date +"%Y%m%d-%H%M").zip"
 TC_DIR="$HOME/tc/aosp-clang"
 GCC_64_DIR="$HOME/tc/aarch64-linux-android-4.9"
 GCC_32_DIR="$HOME/tc/arm-linux-androideabi-4.9"
-AK3_DIR="$HOME/android/AnyKernel3"
+AK3_DIR="AnyKernel3"
 DEFCONFIG="vendor/ginkgo-perf_defconfig"
 
+# Env variable
 export PATH="$TC_DIR/bin:$PATH"
+export KBUILD_BUILD_USER=Tejas
+export KBUILD_BUILD_HOST=I_Am_Charsi
+export KBUILD_BUILD_VERSION="69"
 
-export KBUILD_BUILD_USER=adithya
-export KBUILD_BUILD_HOST=ghostrider_reborn
+# Build Environment
+sudo -E apt-get -qq update
+sudo -E apt-get -qq install bc python2 python3 python-is-python3
 
-if test -z "$(git rev-parse --show-cdup 2>/dev/null)" &&
-   head=$(git rev-parse --verify HEAD 2>/dev/null); then
-	ZIPNAME="${ZIPNAME::-4}-$(echo $head | cut -c1-8).zip"
+# Check for essentials
+if ! [ -d "${TC_DIR}" ]; then
+echo "Clang not found! Cloning to ${TC_DIR}..."
+if ! git clone --depth=1 https://gitlab.com/tejas76/clang-r450784d.git ${TC_DIR}; then
+echo "Cloning failed! Aborting..."
+exit 1
+fi
+fi
+
+if ! [ -d "${GCC_64_DIR}" ]; then
+echo "gcc not found! Cloning to ${GCC_64_DIR}..."
+if ! git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git ${GCC_64_DIR}; then
+echo "Cloning failed! Aborting..."
+exit 1
+fi
+fi
+
+if ! [ -d "${GCC_32_DIR}" ]; then
+echo "gcc_32 not found! Cloning to ${GCC_32_DIR}..."
+if ! git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git ${GCC_32_DIR}; then
+echo "Cloning failed! Aborting..."
+exit 1
+fi
 fi
 
 if [[ $1 = "-r" || $1 = "--regen" ]]; then
 make O=out ARCH=arm64 $DEFCONFIG savedefconfig
 cp out/defconfig arch/arm64/configs/$DEFCONFIG
 exit
-fi
-
-if [[ $1 = "-c" || $1 = "--clean" ]]; then
-rm -rf out
 fi
 
 mkdir -p out
@@ -39,11 +61,6 @@ make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld AR=llvm-ar AS=llvm-as 
 
 if [ -f "out/arch/arm64/boot/Image.gz-dtb" ] && [ -f "out/arch/arm64/boot/dtbo.img" ]; then
 echo -e "\nKernel compiled succesfully! Zipping up...\n"
-if [ -d "$AK3_DIR" ]; then
-cp -r $AK3_DIR AnyKernel3
-elif ! git clone -q https://github.com/ghostrider-reborn/AnyKernel3; then
-echo -e "\nAnyKernel3 repo not found locally and cloning failed! Aborting..."
-exit 1
 fi
 cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3
 cp out/arch/arm64/boot/dtbo.img AnyKernel3
@@ -52,12 +69,9 @@ cd AnyKernel3
 git checkout master &> /dev/null
 zip -r9 "../$ZIPNAME" * -x '*.git*' README.md *placeholder
 cd ..
-rm -rf AnyKernel3
-rm -rf out/arch/arm64/boot
 echo -e "\nCompleted in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) !"
+
+# Upload to temp.sh
 echo "Zip: $ZIPNAME"
-[ -x "$(command -v gdrive)" ] && gdrive upload --share "$ZIPNAME"
-else
-echo -e "\nCompilation failed!"
-exit 1
-fi
+curl -T "$ZIPNAME" temp.sh && echo ""
+exit
