@@ -1,0 +1,21 @@
+name: Compile Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+       - name: Configuring git environment.
+         run: |
+            git config --global user.name Charsi-Tejas
+            git config --global user.email tejassingh649@rediffmail.com
+
+       - name: Building Kernel.
+         run: |
+             git clone --depth 1 https://${{ secrets.USERNAME }}:${{ secrets.TOKEN }}@github.com/${{ secrets.USERNAME }}/Cuh-KerneL.git -b thirteen kernel
+             cd kernel
+             chmod 777 build.sh
+             ./build.sh
