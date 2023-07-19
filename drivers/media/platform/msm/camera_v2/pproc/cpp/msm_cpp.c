@@ -1213,7 +1213,7 @@ static void cpp_release_hardware(struct cpp_device *cpp_dev)
 		rc = msm_cpp_update_bandwidth_setting(cpp_dev, 0, 0);
 	}
 	cpp_dev->stream_cnt = 0;
-	pr_info("cpp hw release done\n");
+	pr_debug("cpp hw release done\n");
 }
 
 static int32_t cpp_load_fw(struct cpp_device *cpp_dev, char *fw_name_bin)

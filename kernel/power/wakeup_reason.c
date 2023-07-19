@@ -266,12 +266,12 @@ static void print_wakeup_sources(void)
 
 	if (!list_empty(&leaf_irqs))
 		list_for_each_entry(n, &leaf_irqs, siblings)
-			pr_info("Resume caused by IRQ %d, %s\n", n->irq,
+			pr_debug("Resume caused by IRQ %d, %s\n", n->irq,
 				n->irq_name);
 	else if (abnormal_wake)
-		pr_info("Resume caused by %s\n", non_irq_wake_reason);
+		pr_debug("Resume caused by %s\n", non_irq_wake_reason);
 	else
-		pr_info("Resume cause unknown\n");
+		pr_debug("Resume cause unknown\n");
 
 	spin_unlock_irqrestore(&wakeup_reason_lock, flags);
 }

@@ -1447,8 +1447,6 @@ int smblib_set_icl_current(struct smb_charger *chg, int icl_ua)
 				POWER_SUPPLY_CONNECTOR_MICRO_USB)) {
 			rc = set_sdp_current(chg, icl_ua);
 			if (rc < 0) {
-				smblib_err(chg,
-					"Couldn't set SDP ICL rc=%d\n", rc);
 				goto out;
 			}
 		} else {
@@ -1483,8 +1481,6 @@ int smblib_set_icl_current(struct smb_charger *chg, int icl_ua)
 			gpio_get_value(chg->dc_9v_gpio) == 0)) {
 			rc = set_sdp_current(chg, icl_ua);
 			if (rc < 0) {
-				smblib_err(chg, "Couldn't set SDP ICL rc=%d\n",
-						rc);
 				goto out;
 			}
 		} else {
@@ -2468,7 +2464,7 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 	if (val->intval > chg->thermal_levels)
 		return -EINVAL;
 
-	pr_info("%s val=%d, chg->system_temp_level=%d, LctThermal=%d, lct_backlight_off= %d, IsInCall=%d \n " 
+	pr_debug("%s val=%d, chg->system_temp_level=%d, LctThermal=%d, lct_backlight_off= %d, IsInCall=%d \n " 
 		,__FUNCTION__,val->intval,chg->system_temp_level, LctThermal, lct_backlight_off, LctIsInCall);
 
 	if (LctThermal == 0) { //from therml-engine always store lvl_sel
@@ -4247,9 +4243,6 @@ static int smblib_handle_usb_current(struct smb_charger *chg,
 				rc = vote(chg->usb_icl_votable,
 					SW_ICL_MAX_VOTER, true, USBIN_500MA);
 				if (rc < 0)
-					smblib_err(chg,
-						"Couldn't set SDP ICL rc=%d\n",
-						rc);
 				return rc;
 			}
 
