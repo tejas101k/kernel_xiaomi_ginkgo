@@ -1,22 +1,17 @@
 #!/bin/bash
 #
-# Compile script for QuicksilveR kernel
+# Compile script for Cuh kernel
 # Copyright (C) 2020-2023 Adithya R.
 # Copyright (C) 2023 Tejas Singh.
 
 SECONDS=0 # builtin bash timer
 ZIPNAME="Cuh-ginkgo-v1-$(TZ=Asia/Kolkata date +"%Y%m%d-%H%M").zip"
-TC_DIR="$HOME/tc/aosp-clang"
+TC_DIR="$HOME/tc/prelude-clang"
 GCC_64_DIR="$HOME/tc/aarch64-linux-android-4.9"
 GCC_32_DIR="$HOME/tc/arm-linux-androideabi-4.9"
 AK3_DIR="AnyKernel3"
 DEFCONFIG="vendor/ginkgo-perf_defconfig"
-
-# Env variable
 export PATH="$TC_DIR/bin:$PATH"
-export KBUILD_BUILD_USER=Tejas
-export KBUILD_BUILD_HOST=I_Am_Charsi
-export KBUILD_BUILD_VERSION="69"
 
 # Build Environment
 sudo -E apt-get -qq update
@@ -25,7 +20,7 @@ sudo -E apt-get -qq install bc python2 python3 python-is-python3
 # Check for essentials
 if ! [ -d "${TC_DIR}" ]; then
 echo "Clang not found! Cloning to ${TC_DIR}..."
-if ! git clone --depth=1 https://gitlab.com/tejas76/clang-r450784d.git ${TC_DIR}; then
+if ! git clone --depth=1 https://gitlab.com/jjpprrrr/prelude-clang.git -b master ${TC_DIR}; then
 echo "Cloning failed! Aborting..."
 exit 1
 fi
@@ -71,7 +66,4 @@ zip -r9 "../$ZIPNAME" * -x '*.git*' README.md *placeholder
 cd ..
 echo -e "\nCompleted in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) !"
 
-# Upload to temp.sh
-echo "Zip: $ZIPNAME"
-curl -T "$ZIPNAME" temp.sh && echo ""
 exit
