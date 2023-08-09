@@ -5,8 +5,9 @@
 # Copyright (C) 2023 Tejas Singh.
 
 SECONDS=0 # builtin bash timer
-ZIPNAME="Cuh-ginkgo-v1-$(TZ=Asia/Kolkata date +"%Y%m%d-%H%M").zip"
-TC_DIR="$HOME/tc/prelude-clang"
+ZIPNAME="Cuh-ginkgo-v1.1-$(TZ=Asia/Kolkata date +"%Y%m%d-%H%M").zip"
+KERNEL_DIR="$(pwd)"
+TC_DIR="$HOME/tc/clang"
 GCC_64_DIR="$HOME/tc/aarch64-linux-android-4.9"
 GCC_32_DIR="$HOME/tc/arm-linux-androideabi-4.9"
 AK3_DIR="AnyKernel3"
@@ -17,15 +18,15 @@ export PATH="$TC_DIR/bin:$PATH"
 sudo -E apt-get -qq update
 sudo -E apt-get -qq install bc python2 python3 python-is-python3
 
-# Check for essentials
-if ! [ -d "${TC_DIR}" ]; then
-echo "Clang not found! Cloning to ${TC_DIR}..."
-if ! git clone --depth=1 https://gitlab.com/jjpprrrr/prelude-clang.git -b master ${TC_DIR}; then
-echo "Cloning failed! Aborting..."
-exit 1
-fi
+# Compiler
+if [ -n "$host" ]; then
+git clone --depth=1 https://gitlab.com/jjpprrrr/prelude-clang.git -b master ${TC_DIR}; else
+rm -rf ${TC_DIR} && mkdir -p ${TC_DIR}
+cd ${TC_DIR} && bash <(curl -s "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman") -S
+cd ${KERNEL_DIR}
 fi
 
+# Check for essentials
 if ! [ -d "${GCC_64_DIR}" ]; then
 echo "gcc not found! Cloning to ${GCC_64_DIR}..."
 if ! git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git ${GCC_64_DIR}; then
@@ -66,4 +67,8 @@ zip -r9 "../$ZIPNAME" * -x '*.git*' README.md *placeholder
 cd ..
 echo -e "\nCompleted in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) !"
 
+# Upload
+if [ -n "$host" ]; then exit
+else echo -e "\nKernel zipped succesfully! Uploading Zip...\n" && curl -T *.zip temp.sh && echo ""
 exit
+fi

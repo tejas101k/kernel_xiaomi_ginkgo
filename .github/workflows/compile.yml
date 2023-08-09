@@ -17,6 +17,7 @@ jobs:
          run: |
              git clone --depth 1 https://${{ secrets.USERNAME }}:${{ secrets.TOKEN }}@github.com/${{ secrets.USERNAME }}/Cuh-KerneL.git -b thirteen kernel
              cd kernel
+             export host=actions
              chmod 777 build.sh
              ./build.sh
 
