@@ -5,7 +5,7 @@
 # Copyright (C) 2023 Tejas Singh.
 
 SECONDS=0 # builtin bash timer
-ZIPNAME="Cuh-ginkgo-v1.6-KSU-$(TZ=Asia/Kolkata date +"%Y%m%d-%H%M").zip"
+ZIPNAME="Cuh-ginkgo-v1.7-KSU-$(TZ=Asia/Kolkata date +"%Y%m%d-%H%M").zip"
 TC_DIR="$HOME/tc/prelude-clang"
 GCC_64_DIR="$HOME/tc/aarch64-linux-android-4.9"
 GCC_32_DIR="$HOME/tc/arm-linux-androideabi-4.9"
