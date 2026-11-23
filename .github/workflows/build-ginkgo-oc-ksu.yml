@@ -1,0 +1,363 @@
+# ==============================================================================
+# GINKGO BRUTAL CLOUD KERNEL BUILDER v2.0 (GitHub Actions GRATIS)
+# Target: Xiaomi Redmi Note 8 / 8T (ginkgo / willow - Snapdragon 665 SM6125)
+# OS    : Project Infinity X Android 16 v3.12 (Kernel Linux 4.14 non-GKI)
+# Root  : KernelSU-Next v3.4.0-legacy (atau pertahankan KSU bawaan repo)
+#
+# Cara pakai:
+#   1. Fork repo kernel ginkgo Android 15/16 di GitHub
+#   2. Simpan file ini sebagai: .github/workflows/build-ginkgo-oc-ksu.yml
+#   3. Buka tab "Actions" -> pilih "Build Ginkgo Extreme OC+UV+KSU Kernel"
+#   4. Klik "Run workflow" -> tunggu ~8-15 menit -> download ZIP di Artifacts!
+# ==============================================================================
+
+name: Build Ginkgo Extreme OC+UV+KSU Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_source_repo:
+        description: "Repo kernel (kosongkan = pakai repo fork ini; atau isi owner/repo)"
+        required: false
+        default: ""
+      kernel_source_branch:
+        description: "Branch kernel (kosongkan = default branch repo)"
+        required: false
+        default: ""
+      defconfig:
+        description: "Defconfig ('auto' = deteksi otomatis ginkgo_defconfig / vendor/ginkgo-perf_defconfig)"
+        required: true
+        default: "auto"
+      ksu_mode:
+        description: "Integrasi KernelSU (pilih v3.4.0-legacy untuk Redmi Note 8 4.14)"
+        type: choice
+        required: true
+        default: "keep-existing"
+        options:
+          - keep-existing
+          - ksun-v3.4.0-legacy
+          - ksun-legacy-latest
+          - none
+      clang_version:
+        description: "Toolchain Clang (r450784e PALING STABIL untuk Linux 4.14 SM6125!)"
+        type: choice
+        required: true
+        default: "aosp-r450784e"
+        options:
+          - aosp-r450784e
+          - aosp-r487747c
+          - custom-url
+      custom_clang_url:
+        description: "URL .tar.gz/.tar.xz Clang (hanya dipakai jika clang_version = custom-url)"
+        required: false
+        default: ""
+      inject_brutal_flags:
+        description: "Otomatis aktifkan TCP BBR + FQ + LZ4 ZRAM + HZ_300 + OVERLAY_FS"
+        type: boolean
+        default: true
+      localversion:
+        description: "Nama akhiran kernel (tampil di Tentang Ponsel / uname -r)"
+        required: true
+        default: "-GinkgoBrutal-OC-UV"
+      use_ccache:
+        description: "Pakai ccache (build ke-2 dst jadi cuma ~4 menit!)"
+        type: boolean
+        default: true
+
+jobs:
+  build-ginkgo-kernel:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    steps:
+      - name: "[1/9] Checkout Source Kernel"
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.kernel_source_repo != '' && inputs.kernel_source_repo || github.repository }}
+          ref: ${{ inputs.kernel_source_branch != '' && inputs.kernel_source_branch || '' }}
+          fetch-depth: 1
+
+      - name: "[2/9] Bebaskan Disk Runner & Install Dependensi Build"
+        run: |
+          # Bebaskan ruang disk runner GitHub (~20GB tambahan aman untuk kernel + ccache)
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android || true
+          df -h
+
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc bison build-essential ccache cpio curl file flex git kmod \
+            gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi \
+            libelf-dev libncurses-dev libssl-dev lld llvm python3 python-is-python3 \
+            tar u-boot-tools xz-utils zip zstd
+
+      - name: "[3/9] Setup ccache (Percepat Build Ulang)"
+        if: ${{ inputs.use_ccache }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-ginkgo-${{ inputs.clang_version }}-${{ github.sha }}
+          restore-keys: |
+            ccache-ginkgo-${{ inputs.clang_version }}-
+            ccache-ginkgo-
+
+      - name: "[4/9] Download & Verifikasi AOSP Clang Toolchain"
+        run: |
+          mkdir -p "$HOME/clang"
+          case "${{ inputs.clang_version }}" in
+            aosp-r450784e)
+              # Branch android14-release TERBUKTI berisi penuh clang-r450784e (paling cocok untuk kernel 4.14!)
+              URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android14-release/clang-r450784e.tar.gz"
+              ;;
+            aosp-r487747c)
+              URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android14-release/clang-r487747c.tar.gz"
+              ;;
+            custom-url)
+              URL="${{ inputs.custom_clang_url }}"
+              if [ -z "$URL" ]; then
+                echo "::error::clang_version=custom-url dipilih tapi custom_clang_url kosong!"
+                exit 1
+              fi
+              ;;
+          esac
+
+          echo "Downloading Clang from: $URL"
+          curl -fL --retry 3 --retry-delay 5 "$URL" -o /tmp/clang.archive
+          file /tmp/clang.archive
+          tar -xf /tmp/clang.archive -C "$HOME/clang"
+          rm -f /tmp/clang.archive
+
+          # Deteksi otomatis jika archive punya 1 sub-folder wrapper
+          if [ ! -x "$HOME/clang/bin/clang" ]; then
+            FOUND_BIN=$(find "$HOME/clang" -maxdepth 3 -type f -name clang -path "*/bin/clang" | head -n 1 || true)
+            if [ -n "$FOUND_BIN" ]; then
+              CLANG_ROOT="$(dirname "$(dirname "$FOUND_BIN")")"
+              echo "CLANG_BIN_DIR=$CLANG_ROOT/bin" >> "$GITHUB_ENV"
+            else
+              echo "::error::bin/clang tidak ditemukan setelah ekstrak! (Kemungkinan URL kosong/salah)"
+              ls -la "$HOME/clang"
+              exit 1
+            fi
+          else
+            echo "CLANG_BIN_DIR=$HOME/clang/bin" >> "$GITHUB_ENV"
+          fi
+
+      - name: "[5/9] Verifikasi Binary Clang & Deteksi Defconfig"
+        run: |
+          "$CLANG_BIN_DIR/clang" --version
+          "$CLANG_BIN_DIR/ld.lld" --version
+
+          REQ_CFG="${{ inputs.defconfig }}"
+          if [ "$REQ_CFG" = "auto" ]; then
+            for cand in \
+              "vendor/ginkgo-perf_defconfig" \
+              "ginkgo_defconfig" \
+              "vendor/ginkgo_defconfig" \
+              "vendor/trinket-perf_defconfig" \
+              "trinket-perf_defconfig" \
+              "trinket_defconfig"; do
+              if [ -f "arch/arm64/configs/$cand" ]; then
+                REQ_CFG="$cand"
+                break
+              fi
+            done
+          fi
+
+          if [ "$REQ_CFG" = "auto" ] || [ ! -f "arch/arm64/configs/$REQ_CFG" ]; then
+            echo "::error::Defconfig '$REQ_CFG' tidak ditemukan!"
+            echo "Daftar defconfig ginkgo/trinket yang tersedia di repo ini:"
+            find arch/arm64/configs -type f \( -iname "*ginkgo*" -o -iname "*trinket*" \) | sed 's|^arch/arm64/configs/|  - |'
+            exit 1
+          fi
+
+          echo "RESOLVED_DEFCONFIG=$REQ_CFG" >> "$GITHUB_ENV"
+          echo "Using defconfig: arch/arm64/configs/$REQ_CFG"
+
+      - name: "[6/9] Integrasi KernelSU-Next Legacy (Opsional)"
+        run: |
+          MODE="${{ inputs.ksu_mode }}"
+          CFG="arch/arm64/configs/$RESOLVED_DEFCONFIG"
+          echo "KernelSU mode: $MODE"
+
+          case "$MODE" in
+            keep-existing)
+              echo "Mempertahankan integrasi KernelSU bawaan repo kernel."
+              ;;
+            ksun-v3.4.0-legacy)
+              echo "Mengintegrasikan KernelSU-Next v3.4.0-legacy..."
+              rm -rf KernelSU KernelSU-Next drivers/kernelsu
+              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s v3.4.0-legacy
+              ;;
+            ksun-legacy-latest)
+              echo "Mengintegrasikan KernelSU-Next branch legacy terbaru..."
+              rm -rf KernelSU KernelSU-Next drivers/kernelsu
+              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
+              ;;
+            none)
+              echo "Build kernel murni tanpa menambahkan KernelSU baru."
+              ;;
+          esac
+
+          if [ "$MODE" = "ksun-v3.4.0-legacy" ] || [ "$MODE" = "ksun-legacy-latest" ]; then
+            cat <<'EOF' >> "$CFG"
+
+          # KernelSU-Next Legacy (Linux 4.14 Non-GKI)
+          CONFIG_KSU=y
+          CONFIG_KPROBES=y
+          CONFIG_HAVE_KPROBES=y
+          CONFIG_KPROBE_EVENTS=y
+          CONFIG_OVERLAY_FS=y
+          EOF
+          fi
+
+      - name: "[7/9] Suntik Flag Brutal Creator (TCP BBR, FQ, LZ4 ZRAM, HZ_300)"
+        if: ${{ inputs.inject_brutal_flags }}
+        run: |
+          CFG="arch/arm64/configs/$RESOLVED_DEFCONFIG"
+          echo "Menambahkan flag Brutal Creator ke $CFG ..."
+          cat <<'EOF' >> "$CFG"
+
+          # === Ginkgo Brutal Creator Extreme Kernel Flags ===
+          CONFIG_TCP_CONG_ADVANCED=y
+          CONFIG_TCP_CONG_BBR=y
+          CONFIG_DEFAULT_BBR=y
+          CONFIG_DEFAULT_TCP_CONG="bbr"
+          CONFIG_NET_SCH_FQ=y
+          CONFIG_NET_SCH_FQ_CODEL=y
+          CONFIG_ZRAM=y
+          CONFIG_CRYPTO_LZ4=y
+          CONFIG_ZRAM_WRITEBACK=y
+          CONFIG_OVERLAY_FS=y
+          CONFIG_HZ_300=y
+          EOF
+
+      - name: "[8/9] Compile Kernel ARM64 SM6125 (Image.gz-dtb + dtbo.img)"
+        env:
+          ARCH: arm64
+          SUBARCH: arm64
+          LOCALVERSION: ${{ inputs.localversion }}
+          KBUILD_BUILD_USER: ginkgo-brutal
+          KBUILD_BUILD_HOST: github-actions
+        run: |
+          export PATH="$CLANG_BIN_DIR:$PATH"
+          if [ "${{ inputs.use_ccache }}" = "true" ]; then
+            export CCACHE_DIR="$HOME/.ccache"
+            ccache -M 4G
+            CC_CMD="ccache clang"
+          else
+            CC_CMD="clang"
+          fi
+
+          MAKE_ARGS=(
+            O=out
+            ARCH=arm64
+            CC="$CC_CMD"
+            LD=ld.lld
+            AR=llvm-ar
+            NM=llvm-nm
+            OBJCOPY=llvm-objcopy
+            OBJDUMP=llvm-objdump
+            STRIP=llvm-strip
+            CLANG_TRIPLE=aarch64-linux-gnu-
+            CROSS_COMPILE=aarch64-linux-gnu-
+            CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+          )
+
+          echo ">>> Generating .config from $RESOLVED_DEFCONFIG ..."
+          make "${MAKE_ARGS[@]}" "$RESOLVED_DEFCONFIG"
+
+          # Cek apakah tree kernel mendukung target dtbo.img
+          TARGETS="Image.gz-dtb"
+          if grep -qE '^CONFIG_BUILD_ARM64_DT_OVERLAY=y' out/.config 2>/dev/null; then
+            TARGETS="Image.gz-dtb dtbo.img"
+          fi
+          echo ">>> Building targets: $TARGETS with $(nproc) threads ..."
+
+          make -j"$(nproc)" "${MAKE_ARGS[@]}" $TARGETS
+
+          if [ ! -f out/arch/arm64/boot/Image.gz-dtb ]; then
+            echo "::error::Compile gagal: out/arch/arm64/boot/Image.gz-dtb tidak ditemukan!"
+            exit 1
+          fi
+
+          [ "${{ inputs.use_ccache }}" = "true" ] && ccache -s || true
+          ls -lh out/arch/arm64/boot/
+
+      - name: "[9/9] Kemas Flashable AnyKernel3 ZIP Khusus Ginkgo/Willow"
+        run: |
+          AK_DIR="AnyKernel3"
+          if [ -d "$AK_DIR" ] && [ -f "$AK_DIR/anykernel.sh" ]; then
+            echo "Menggunakan AnyKernel3 bawaan repo kernel (sudah dikonfigurasi untuk ginkgo)."
+          else
+            echo "Repo belum punya AnyKernel3 — mengunduh & mengkonfigurasi khusus Redmi Note 8 (ginkgo/willow)..."
+            rm -rf "$AK_DIR"
+            git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git "$AK_DIR"
+            cat <<'EOF' > "$AK_DIR/anykernel.sh"
+          ### AnyKernel3 Ramdisk Mod Script - Redmi Note 8 / 8T (ginkgo / willow)
+          properties() { '
+          kernel.string=Ginkgo Brutal Extreme OC+UV+KSU Kernel
+          do.devicecheck=1
+          do.modules=0
+          do.systemless=1
+          do.cleanup=1
+          do.cleanuponabort=0
+          device.name1=ginkgo
+          device.name2=willow
+          supported.versions=13 - 16
+          supported.patchlevels=
+          '; }
+
+          block=/dev/block/bootdevice/by-name/boot;
+          is_slot_device=0;
+          ramdisk_compression=auto;
+          patch_vbmeta_flag=auto;
+
+          . tools/ak3-core.sh;
+
+          dump_boot;
+          write_boot;
+          EOF
+          fi
+
+          # Bersihkan image lama jika ada lalu salin hasil compile baru
+          rm -f "$AK_DIR/Image" "$AK_DIR/Image.gz" "$AK_DIR/Image.gz-dtb" "$AK_DIR/dtbo.img" "$AK_DIR/dtb"
+          cp -f out/arch/arm64/boot/Image.gz-dtb "$AK_DIR/"
+          [ -f out/arch/arm64/boot/dtbo.img ] && cp -f out/arch/arm64/boot/dtbo.img "$AK_DIR/"
+
+          BUILD_DATE=$(date +%Y%m%d-%H%M)
+          ZIP_NAME="GinkgoBrutal-Kernel-${BUILD_DATE}.zip"
+          (
+            cd "$AK_DIR"
+            zip -r9 "../$ZIP_NAME" . -x '.git*' 'README.md' '*placeholder'
+          )
+
+          sha256sum "$ZIP_NAME" | tee "${ZIP_NAME}.sha256"
+          echo "OUT_ZIP=$ZIP_NAME" >> "$GITHUB_ENV"
+
+          # Tampilkan ringkasan rapi di halaman GitHub Actions Summary
+          {
+            echo "## Ginkgo Brutal Kernel Build Selesai!"
+            echo ""
+            echo "| Parameter | Nilai |"
+            echo "|---|---|"
+            echo "| File ZIP | \`$ZIP_NAME\` |"
+            echo "| Defconfig | \`$RESOLVED_DEFCONFIG\` |"
+            echo "| KernelSU Mode | \`${{ inputs.ksu_mode }}\` |"
+            echo "| Clang | \`${{ inputs.clang_version }}\` |"
+            echo "| Localversion | \`${{ inputs.localversion }}\` |"
+            echo "| dtbo.img ikut dikemas | \`$([ -f out/arch/arm64/boot/dtbo.img ] && echo YA || echo TIDAK)\` |"
+            echo "| SHA256 | \`$(awk '{print $1}' "${ZIP_NAME}.sha256")\` |"
+            echo ""
+            echo "### Cara Flash Aman"
+            echo "1. Backup \`Boot\` dan \`DTBO\` di OrangeFox/TWRP."
+            echo "2. Flash \`$ZIP_NAME\` lewat OrangeFox/TWRP."
+            echo "3. Reboot & cek \`ginkgoctl oc-audit\`!"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Flashable Kernel ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GinkgoBrutal-Kernel-Flashable-ZIP
+          path: |
+            GinkgoBrutal-Kernel-*.zip
+            GinkgoBrutal-Kernel-*.zip.sha256
+          retention-days: 30
